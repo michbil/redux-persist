@@ -3,9 +3,7 @@ import type { KeyAccessState, PersistConfig } from './types'
 
 import { KEY_PREFIX } from './constants'
 
-export default function getStoredState(
-  config: PersistConfig<any>
-): Promise<any | void> {
+export default function getStoredState(config: PersistConfig<any>): any | void {
   const transforms = config.transforms || []
   const storageKey = `${
     config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX
@@ -20,28 +18,27 @@ export default function getStoredState(
   } else {
     deserialize = defaultDeserialize
   }
-  return storage.getItem(storageKey).then((serialized: any) => {
-    if (!serialized) return undefined
-    else {
-      try {
-        const state: KeyAccessState = {}
-        const rawState = deserialize(serialized)
-        Object.keys(rawState).forEach(key => {
-          state[key] = transforms.reduceRight((subState, transformer) => {
-            return transformer.out(subState, key, rawState)
-          }, deserialize(rawState[key]))
-        })
-        return state
-      } catch (err) {
-        if (process.env.NODE_ENV !== 'production' && debug)
-          console.log(
-            `redux-persist/getStoredState: Error restoring data ${serialized}`,
-            err
-          )
-        throw err
-      }
+  const serialized = storage.getItem(storageKey)
+  if (!serialized) return undefined
+  else {
+    try {
+      const state: KeyAccessState = {}
+      const rawState = deserialize(serialized)
+      Object.keys(rawState).forEach((key) => {
+        state[key] = transforms.reduceRight((subState, transformer) => {
+          return transformer.out(subState, key, rawState)
+        }, deserialize(rawState[key]))
+      })
+      return state
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production' && debug)
+        console.log(
+          `redux-persist/getStoredState: Error restoring data ${serialized}`,
+          err
+        )
+      throw err
     }
-  })
+  }
 }
 
 function defaultDeserialize(serial: string) {

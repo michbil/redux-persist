@@ -6,16 +6,16 @@ import type { PersistedState, MigrationManifest } from './types'
 export default function createMigrate(
   migrations: MigrationManifest,
   config?: { debug: boolean }
-): (state: PersistedState, currentVersion: number) => Promise<PersistedState> {
+): (state: PersistedState, currentVersion: number) => PersistedState {
   const { debug } = config || {}
-  return function(
+  return function (
     state: PersistedState,
     currentVersion: number
-  ): Promise<PersistedState> {
+  ): PersistedState {
     if (!state) {
       if (process.env.NODE_ENV !== 'production' && debug)
         console.log('redux-persist: no inbound state, skipping migration')
-      return Promise.resolve(undefined)
+      return undefined
     }
 
     const inboundVersion: number =
@@ -25,33 +25,33 @@ export default function createMigrate(
     if (inboundVersion === currentVersion) {
       if (process.env.NODE_ENV !== 'production' && debug)
         console.log('redux-persist: versions match, noop migration')
-      return Promise.resolve(state)
+      return state
     }
     if (inboundVersion > currentVersion) {
       if (process.env.NODE_ENV !== 'production')
         console.error('redux-persist: downgrading version is not supported')
-      return Promise.resolve(state)
+      return state
     }
 
     const migrationKeys = Object.keys(migrations)
-      .map(ver => parseInt(ver))
-      .filter(key => currentVersion >= key && key > inboundVersion)
+      .map((ver) => parseInt(ver))
+      .filter((key) => currentVersion >= key && key > inboundVersion)
       .sort((a, b) => a - b)
 
     if (process.env.NODE_ENV !== 'production' && debug)
       console.log('redux-persist: migrationKeys', migrationKeys)
-    try {
-      const migratedState: any = migrationKeys.reduce((state: any, versionKey) => {
+
+    const migratedState: any = migrationKeys.reduce(
+      (state: any, versionKey) => {
         if (process.env.NODE_ENV !== 'production' && debug)
           console.log(
             'redux-persist: running migration for versionKey',
             versionKey
           )
         return migrations[versionKey](state)
-      }, state)
-      return Promise.resolve(migratedState)
-    } catch (err) {
-      return Promise.reject(err)
-    }
+      },
+      state
+    )
+    return migratedState
   }
 }

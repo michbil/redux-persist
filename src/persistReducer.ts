@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  Action, AnyAction, Reducer
-} from 'redux'
+import { Action, AnyAction, Reducer } from 'redux'
 
 import {
   FLUSH,
@@ -12,18 +10,14 @@ import {
   DEFAULT_VERSION,
 } from './constants'
 
-import type {
-  PersistConfig,
-  PersistState,
-  Persistoid,
-} from './types'
+import type { PersistConfig, PersistState, Persistoid } from './types'
 
 import autoMergeLevel1 from './stateReconciler/autoMergeLevel1'
 import createPersistoid from './createPersistoid'
 import defaultGetStoredState from './getStoredState'
 import purgeStoredState from './purgeStoredState'
 
-type PersistPartial = { _persist: PersistState } | any;
+type PersistPartial = { _persist: PersistState } | any
 const DEFAULT_TIMEOUT = 5000
 /*
   @TODO add validation / handling for:
@@ -74,9 +68,7 @@ export default function persistReducer<S, A extends Action>(
         // dev warning if we are already sealed
         if (process.env.NODE_ENV !== 'production' && _sealed)
           console.error(
-            `redux-persist: rehydrate for "${
-              config.key
-            }" called after timeout.`,
+            `redux-persist: rehydrate for "${config.key}" called after timeout.`,
             payload,
             err
           )
@@ -93,9 +85,7 @@ export default function persistReducer<S, A extends Action>(
             _rehydrate(
               undefined,
               new Error(
-                `redux-persist: persist timed out for persist key "${
-                  config.key
-                }"`
+                `redux-persist: persist timed out for persist key "${config.key}"`
               )
             )
         }, timeout)
@@ -113,7 +103,7 @@ export default function persistReducer<S, A extends Action>(
         return {
           ...baseReducer(restState, action),
           _persist,
-        };
+        }
       }
 
       if (
@@ -126,27 +116,24 @@ export default function persistReducer<S, A extends Action>(
 
       action.register(config.key)
 
-      getStoredState(config).then(
-        restoredState => {
-          if (restoredState) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const migrate = config.migrate || ((s, _) => Promise.resolve(s))
-            migrate(restoredState as any, version).then(
-              migratedState => {
-                _rehydrate(migratedState)
-              },
-              migrateErr => {
-                if (process.env.NODE_ENV !== 'production' && migrateErr)
-                  console.error('redux-persist: migration error', migrateErr)
-                _rehydrate(undefined, migrateErr)
-              }
-            )
+      const restoredState = getStoredState(config)
+      try {
+        if (restoredState) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const identityFn = (s: any) => s
+          const migrate = config.migrate || identityFn
+          try {
+            const migratedState = migrate(restoredState as any, version)
+            _rehydrate(migratedState)
+          } catch (migrateErr) {
+            if (process.env.NODE_ENV !== 'production' && migrateErr)
+              console.error('redux-persist: migration error', migrateErr)
+            _rehydrate(undefined, migrateErr)
           }
-        },
-        err => {
-          _rehydrate(undefined, err)
         }
-      )
+      } catch (err) {
+        _rehydrate(undefined, err)
+      }
 
       return {
         ...baseReducer(restState, action),

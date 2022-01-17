@@ -37,8 +37,8 @@ createMigrate(
 ### `type Persistor`
 ```js
 {
-  purge: () => Promise<void>,
-  flush: () => Promise<void>,
+  purge: () => void,
+  flush: () => void,
 }
 ```
 
@@ -56,7 +56,7 @@ The Persistor is a redux store unto itself, plus
   version?: number, // the state version as an integer (defaults to -1)
   blacklist?: Array<string>, // do not persist these keys
   whitelist?: Array<string>, // only persist these keys
-  migrate?: (Object, number) => Promise<Object>,
+  migrate?: (Object, number) => Object,
   transforms?: Array<Transform>,
   throttle?: number, // ms to throttle state writes
   keyPrefix?: string, // will be prefixed to the storage key
@@ -85,7 +85,7 @@ The following methods are used internally by the standard api. They can be acces
 ```js
 getStoredState(
   config: PersistConfig
-): Promise<State>
+): State
 ```
 
 Returns a promise (if Promise global is defined) of restored state.

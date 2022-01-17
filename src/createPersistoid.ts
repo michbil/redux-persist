@@ -4,7 +4,9 @@ import { KEY_PREFIX } from './constants'
 import type { Persistoid, PersistConfig } from './types'
 import { KeyAccessState } from './types'
 
-export default function createPersistoid(config: PersistConfig<any>): Persistoid {
+export default function createPersistoid(
+  config: PersistConfig<any>
+): Persistoid {
   // defaults
   const blacklist: string[] | null = config.blacklist || null
   const whitelist: string[] | null = config.whitelist || null
@@ -29,11 +31,10 @@ export default function createPersistoid(config: PersistConfig<any>): Persistoid
   const stagedState: KeyAccessState = {}
   const keysToProcess: string[] = []
   let timeIterator: any = null
-  let writePromise: Promise<any> | null = null
 
   const update = (state: KeyAccessState) => {
     // add any changed keys to the queue
-    Object.keys(state).forEach(key => {
+    Object.keys(state).forEach((key) => {
       if (!passWhitelistBlacklist(key)) return // is keyspace ignored? noop
       if (lastState[key] === state[key]) return // value unchanged? noop
       if (keysToProcess.indexOf(key) !== -1) return // is key already queued? noop
@@ -42,7 +43,7 @@ export default function createPersistoid(config: PersistConfig<any>): Persistoid
 
     //if any key is missing in the new state which was present in the lastState,
     //add it for processing too
-    Object.keys(lastState).forEach(key => {
+    Object.keys(lastState).forEach((key) => {
       if (
         state[key] === undefined &&
         passWhitelistBlacklist(key) &&
@@ -97,15 +98,13 @@ export default function createPersistoid(config: PersistConfig<any>): Persistoid
 
   function writeStagedState() {
     // cleanup any removed keys just before write.
-    Object.keys(stagedState).forEach(key => {
+    Object.keys(stagedState).forEach((key) => {
       if (lastState[key] === undefined) {
         delete stagedState[key]
       }
     })
 
-    writePromise = storage
-      .setItem(storageKey, serialize(stagedState))
-      .catch(onWriteFail)
+    storage.setItem(storageKey, serialize(stagedState))
   }
 
   function passWhitelistBlacklist(key: string) {
@@ -127,7 +126,6 @@ export default function createPersistoid(config: PersistConfig<any>): Persistoid
     while (keysToProcess.length !== 0) {
       processNextKey()
     }
-    return writePromise || Promise.resolve()
   }
 
   // return `persistoid`
